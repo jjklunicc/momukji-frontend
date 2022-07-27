@@ -232,5 +232,8 @@
     "docs",
     "docs/packages/*",
     "test"
-  ]
+  ],
+  "dependencies": {
+    "yarn": "^1.22.19"
+  }
 }
