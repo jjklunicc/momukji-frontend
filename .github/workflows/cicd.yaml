@@ -1,0 +1,44 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [ 18.x ]
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    - run: npm ci
+    - run: npm run build
+
+
+  deployment:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Deploy
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SERVER_URL }}
+        port: ${{ secrets.SERVER_PORT }}
+        username: ${{ secrets.SERVER_ID }}
+        password: ${{ secrets.SERVER_PW }}
+        envs: GITHUB_SHA
+        script: |
+          rm -rf momukji-frontend/
+          git clone https://github.com/jjklunicc/momukji-frontend.git
+          docker build -t momukji-frontend momukji-frontend/
+          docker stop momukji-frontend-container
+          docker rm momukji-frontend-container
+          docker run -d --name momukji-frontend-container -p 80:80 momukji-frontend
